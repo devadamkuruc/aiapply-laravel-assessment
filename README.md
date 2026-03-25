@@ -40,7 +40,7 @@ Both links are required.
 
 - **Duration:** 2 hours
 - **Recording:** Record your screen from start to finish (OBS, Loom, or any tool)
-- **Think aloud:** Explain what you plan, why you make decisions, what you search for
+- **Think aloud:** Ideally, talk through your thinking process out loud while you work — what you plan to do, why you make certain decisions, what you search for. This helps us understand how you approach problems.
 - **AI tools:** Use any AI tools you want (Cursor, Copilot, ChatGPT, Claude) — this is encouraged!
 - **Commits:** Commit frequently, at least every 15 minutes
 - **Completion:** You do NOT need to finish everything. We evaluate your process, not just the result. Use the time wisely.
