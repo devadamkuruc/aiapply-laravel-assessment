@@ -82,19 +82,60 @@
         </div>
       </div>
 
-      <!-- Comments placeholder -->
-      <div class="mt-6 bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">Comments</h2>
-        <p class="text-gray-400 text-sm italic">
-          💬 Comments feature is not implemented yet — this is one of the assessment tasks for you to build!
-        </p>
+      <!-- Comments -->
+      <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Comments ({{ comments.length }})</h2>
+
+        <!-- Comment list -->
+        <div v-if="comments.length > 0" class="space-y-4 mb-6">
+          <div v-for="comment in comments" :key="comment.id" class="flex gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-semibold uppercase">
+              {{ comment.user.name.charAt(0) }}
+            </div>
+            <div class="flex-1">
+              <div class="flex items-baseline gap-2">
+                <span class="text-sm font-medium text-gray-900">{{ comment.user.name }}</span>
+                <span class="text-xs text-gray-400">{{ formatDateTime(comment.created_at) }}</span>
+              </div>
+              <p class="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{{ comment.body }}</p>
+            </div>
+          </div>
+        </div>
+        <p v-else class="text-gray-400 text-sm italic mb-6">No comments yet. Be the first to comment.</p>
+
+        <!-- Comment form -->
+        <div class="border-t border-gray-100 pt-4">
+          <textarea
+            v-model="commentBody"
+            maxlength="1000"
+            placeholder="Add a comment…"
+            rows="3"
+            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none"
+          ></textarea>
+          <div class="mt-1 flex items-center justify-between">
+            <p v-if="commentErrors.body" class="text-red-600 text-xs">{{ commentErrors.body[0] }}</p>
+            <span v-else></span>
+            <span class="text-xs" :class="commentBody.length >= 1000 ? 'text-red-600 font-medium' : commentBody.length >= 900 ? 'text-orange-500' : 'text-gray-400'">
+              {{ commentBody.length }}/1000
+            </span>
+          </div>
+          <div class="mt-2 flex justify-end">
+            <button
+              @click="submitComment"
+              :disabled="submitting"
+              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {{ submitting ? 'Posting…' : 'Post comment' }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../composables/useApi.js';
 
@@ -103,6 +144,11 @@ const router = useRouter();
 
 const task = ref(null);
 const loading = ref(true);
+
+const comments = ref([]);
+const commentBody = ref('');
+const commentErrors = ref({});
+const submitting = ref(false);
 
 const fetchTask = async () => {
   loading.value = true;
@@ -116,6 +162,37 @@ const fetchTask = async () => {
     loading.value = false;
   }
 };
+
+const fetchComments = async () => {
+  try {
+    const response = await api.get(`/tasks/${route.params.id}/comments`);
+    comments.value = response.data;
+  } catch (err) {
+    console.error('Failed to fetch comments:', err);
+  }
+};
+
+const submitComment = async () => {
+  commentErrors.value = {};
+  submitting.value = true;
+  try {
+    const response = await api.post(`/tasks/${route.params.id}/comments`, { body: commentBody.value });
+    comments.value.unshift(response.data);
+    commentBody.value = '';
+  } catch (err) {
+    if (err.response?.status === 422) {
+      commentErrors.value = err.response.data.errors;
+    } else {
+      console.error('Failed to post comment:', err);
+    }
+  } finally {
+    submitting.value = false;
+  }
+};
+
+watch(commentBody, () => {
+  commentErrors.value = {};
+});
 
 const deleteTask = async () => {
   if (!confirm('Delete this task? This cannot be undone.')) return;
@@ -160,5 +237,13 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-onMounted(fetchTask);
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+onMounted(() => {
+  fetchTask();
+  fetchComments();
+});
 </script>
