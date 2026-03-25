@@ -17,7 +17,10 @@ class CommentPosted implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        return [new Channel('task.' . $this->comment->task_id)];
+        return [
+            new Channel('task.' . $this->comment->task_id),
+            new Channel('comments'),
+        ];
     }
 
     public function broadcastWith(): array
@@ -26,6 +29,7 @@ class CommentPosted implements ShouldBroadcastNow
             'id'         => $this->comment->id,
             'body'       => $this->comment->body,
             'task_id'    => $this->comment->task_id,
+            'task_name'  => $this->comment->task->name,
             'created_at' => $this->comment->created_at,
             'user'       => [
                 'id'   => $this->comment->user->id,

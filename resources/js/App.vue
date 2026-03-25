@@ -68,15 +68,50 @@
         <router-view />
       </div>
     </main>
+
+    <!-- Toast notifications -->
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
+        class="flex items-start gap-3 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 w-80"
+      >
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-semibold uppercase">
+          {{ toast.initial }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-900">{{ toast.name }} commented</p>
+          <p class="text-xs text-gray-500 truncate">on "{{ toast.task }}"</p>
+        </div>
+        <button @click="dismiss(toast.id)" class="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
+import { onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from './composables/useAuth.js';
+import { useToast } from './composables/useToast.js';
 
 const router = useRouter();
 const { isAuthenticated, user, logout } = useAuth();
+const { toasts, show, dismiss } = useToast();
+
+const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+
+onMounted(() => {
+  window.Echo.channel('comments').listen('CommentPosted', (e) => {
+    if (e.user.id !== currentUser?.id) {
+      show({ name: e.user.name, task: e.task_name });
+    }
+  });
+});
+
+onUnmounted(() => {
+  window.Echo.leaveChannel('comments');
+});
 
 const handleLogout = async () => {
   await logout();
