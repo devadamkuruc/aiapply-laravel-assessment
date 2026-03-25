@@ -15,7 +15,7 @@ class TaskController extends Controller
      */
     public function index(Request $request)
     {
-        $query = $request->user()->tasks()->latest();
+        $query = Task::latest();
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -51,10 +51,6 @@ class TaskController extends Controller
      */
     public function show(Request $request, Task $task)
     {
-        if ($task->user_id !== $request->user()->id) {
-            abort(403);
-        }
-
         return response()->json($task);
     }
 

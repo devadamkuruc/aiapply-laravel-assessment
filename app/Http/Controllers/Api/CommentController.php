@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CommentPosted;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
 use Illuminate\Http\Request;
@@ -10,10 +11,6 @@ class CommentController extends Controller
 {
     public function index(Request $request, Task $task)
     {
-        if ($task->user_id !== $request->user()->id) {
-            abort(403);
-        }
-
         return response()->json(
             $task->comments()->with('user:id,name')->latest()->get()
         );
@@ -21,10 +18,6 @@ class CommentController extends Controller
 
     public function store(Request $request, Task $task)
     {
-        if ($task->user_id !== $request->user()->id) {
-            abort(403);
-        }
-
         $validated = $request->validate([
             'body' => 'required|string|max:1000',
         ]);
@@ -35,6 +28,8 @@ class CommentController extends Controller
         ]);
 
         $comment->load('user:id,name');
+
+        broadcast(new CommentPosted($comment));
 
         return response()->json($comment, 201);
     }
