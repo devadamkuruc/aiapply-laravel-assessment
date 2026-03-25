@@ -16,6 +16,25 @@
       </div>
     </div>
 
+    <!-- Filter bar -->
+    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+      <select
+        v-model="filterStatus"
+        class="block rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+      >
+        <option value="">All Statuses</option>
+        <option value="todo">To Do</option>
+        <option value="in_progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+      <input
+        v-model="filterSearch"
+        type="text"
+        placeholder="Search tasks…"
+        class="block w-full sm:w-64 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+      />
+    </div>
+
     <!-- Loading state -->
     <div v-if="loading" class="mt-10 flex justify-center">
       <div class="text-gray-400 text-sm">Loading tasks…</div>
@@ -98,18 +117,23 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../composables/useApi.js';
 
 const router = useRouter();
 const tasks = ref([]);
 const loading = ref(true);
+const filterStatus = ref('');
+const filterSearch = ref('');
 
 const fetchTasks = async () => {
   loading.value = true;
   try {
-    const response = await api.get('/tasks');
+    const params = {};
+    if (filterStatus.value) params.status = filterStatus.value;
+    if (filterSearch.value) params.search = filterSearch.value;
+    const response = await api.get('/tasks', { params });
     tasks.value = response.data;
   } catch (err) {
     console.error('Failed to fetch tasks:', err);
@@ -117,6 +141,14 @@ const fetchTasks = async () => {
     loading.value = false;
   }
 };
+
+watch(filterStatus, fetchTasks);
+
+let searchTimeout = null;
+watch(filterSearch, () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(fetchTasks, 300);
+});
 
 const deleteTask = async (id) => {
   if (!confirm('Delete this task? This cannot be undone.')) return;
