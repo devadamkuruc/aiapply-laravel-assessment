@@ -13,21 +13,29 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $users = User::factory()->count(3)->create();
-        
-        // Ensure we have a specific user for testing
-        $testUser = User::factory()->create([
+        // Test candidate account
+        $candidate = User::factory()->create([
             'name' => 'Test Candidate',
             'email' => 'candidate@example.com',
             'password' => bcrypt('password'),
         ]);
 
-        $allUsers = $users->push($testUser);
+        // Additional team members
+        $alice = User::factory()->create([
+            'name' => 'Alice Johnson',
+            'email' => 'alice@example.com',
+            'password' => bcrypt('password'),
+        ]);
 
-        foreach ($allUsers as $user) {
-            Task::factory()->count(10)->create([
-                'user_id' => $user->id,
-            ]);
-        }
+        $bob = User::factory()->create([
+            'name' => 'Bob Smith',
+            'email' => 'bob@example.com',
+            'password' => bcrypt('password'),
+        ]);
+
+        // Create tasks for each user
+        Task::factory()->count(12)->create(['user_id' => $candidate->id]);
+        Task::factory()->count(8)->create(['user_id' => $alice->id]);
+        Task::factory()->count(5)->create(['user_id' => $bob->id]);
     }
 }
