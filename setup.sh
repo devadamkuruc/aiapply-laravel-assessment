@@ -44,11 +44,7 @@ docker compose exec app php artisan key:generate --force
 echo "Running migrations and seeding database..."
 docker compose exec app php artisan migrate:fresh --seed --force
 
-# Install Node dependencies
-echo "Installing Node dependencies..."
-docker compose exec node npm install
-
-# Build frontend assets
+# Build frontend assets (node container auto-installs deps on startup)
 echo "Building frontend assets..."
 docker compose exec node npm run build
 
